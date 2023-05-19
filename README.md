@@ -1,6 +1,6 @@
 <div align="center">
   <p>
-    <a align="center" href="README.netspresso.md" target="_blank">
+    <a align="center" href="README_netspresso.md" target="_blank">
       <img width="100%" src="./imgs/PIDNet_banner1.png"></a>
   </p>
 
