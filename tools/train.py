@@ -5,6 +5,7 @@
 import argparse
 import os
 import pprint
+import sys
 
 import logging
 import timeit
@@ -34,7 +35,10 @@ def parse_args():
                         help='experiment configure file name',
                         default="configs/cityscapes/pidnet_small_cityscapes.yaml",
                         type=str)
-    parser.add_argument('--seed', type=int, default=304)    
+    parser.add_argument('--netspresso', action='store_true', help='retrain the compressed model')
+    parser.add_argument('--model', type=str, default=None) 
+    parser.add_argument('--head', type=str, default=None)
+    parser.add_argument('--seed', type=int, default=304)
     parser.add_argument('opts',
                         help="Modify config options using the command-line",
                         default=None,
@@ -72,12 +76,22 @@ def main():
     cudnn.deterministic = config.CUDNN.DETERMINISTIC
     cudnn.enabled = config.CUDNN.ENABLED
     gpus = list(config.GPUS)
-    if torch.cuda.device_count() != len(gpus):
-        print("The gpu numbers do not match!")
-        return 0
     
-    imgnet = 'imagenet' in config.MODEL.PRETRAINED
-    model = models.pidnet.get_seg_model(config, imgnet_pretrained=imgnet)
+    if args.netspresso:
+        try:
+            model_model = torch.load(args.model)
+            model_head = torch.load(args.head)
+        except:
+            logger.info('!! You need to check your --model, --head !!')
+            sys.exit()
+            
+        model = nn.Sequential(
+            model_model,
+            model_head
+        )
+    else:
+        imgnet = 'imagenet' in config.MODEL.PRETRAINED
+        model = models.pidnet.get_seg_model(config, imgnet_pretrained=imgnet)
  
     batch_size = config.TRAIN.BATCH_SIZE_PER_GPU * len(gpus)
     # prepare data
@@ -154,7 +168,7 @@ def main():
     best_mIoU = 0
     last_epoch = 0
     flag_rm = config.TRAIN.RESUME
-    if config.TRAIN.RESUME:
+    if config.TRAIN.RESUME and not args.netspresso:
         model_state_file = os.path.join(final_output_dir, 'checkpoint.pth.tar')
         if os.path.isfile(model_state_file):
             checkpoint = torch.load(model_state_file, map_location={'cuda:0': 'cpu'})
@@ -186,28 +200,43 @@ def main():
                         testloader, model, writer_dict)
         if flag_rm == 1:
             flag_rm = 0
-
-        logger.info('=> saving checkpoint to {}'.format(
-            final_output_dir + 'checkpoint.pth.tar'))
-        torch.save({
-            'epoch': epoch+1,
-            'best_mIoU': best_mIoU,
-            'state_dict': model.module.state_dict(),
-            'optimizer': optimizer.state_dict(),
-        }, os.path.join(final_output_dir,'checkpoint.pth.tar'))
-        if mean_IoU > best_mIoU:
-            best_mIoU = mean_IoU
-            torch.save(model.module.state_dict(),
-                    os.path.join(final_output_dir, 'best.pt'))
-        msg = 'Loss: {:.3f}, MeanIU: {: 4.4f}, Best_mIoU: {: 4.4f}'.format(
-                    valid_loss, mean_IoU, best_mIoU)
+            
+        if args.netspresso:
+            #Netspresso_ 분리해서 저장하는 코드 작성
+            logger.info('=> saving model_model to {}'.format(final_output_dir + 'retrain_model_model.pt'))
+            torch.save(model_model, os.path.join(final_output_dir,'retrain_model_model.pt'))
+            logger.info('=> saving model_head to {}'.format(final_output_dir + 'retrain_model_head.pt'))
+            torch.save(model_head, os.path.join(final_output_dir,'retrain_model_head.pt'))
+            if mean_IoU > best_mIoU:
+                best_mIoU = mean_IoU
+                torch.save(model_model, os.path.join(final_output_dir, 'best_model_model.pt'))
+                torch.save(model_head, os.path.join(final_output_dir, 'best_model_head.pt'))
+            msg = 'Loss: {:.3f}, MeanIU: {: 4.4f}, Best_mIoU: {: 4.4f}'.format(
+                        valid_loss, mean_IoU, best_mIoU)
+        else:
+            logger.info('=> saving checkpoint to {}'.format(
+                final_output_dir + 'checkpoint.pth.tar'))
+            torch.save({
+                'epoch': epoch+1,
+                'best_mIoU': best_mIoU,
+                'state_dict': model.module.state_dict(),
+                'optimizer': optimizer.state_dict(),
+            }, os.path.join(final_output_dir,'checkpoint.pth.tar'))
+            if mean_IoU > best_mIoU:
+                best_mIoU = mean_IoU
+                torch.save(model.module.state_dict(),
+                        os.path.join(final_output_dir, 'best.pt'))
+            msg = 'Loss: {:.3f}, MeanIU: {: 4.4f}, Best_mIoU: {: 4.4f}'.format(
+                        valid_loss, mean_IoU, best_mIoU)
         logging.info(msg)
         logging.info(IoU_array)
-
-
-
-    torch.save(model.module.state_dict(),
-            os.path.join(final_output_dir, 'final_state.pt'))
+        
+    
+    if args.netspresso:
+        #Netspresso_ 분리해서 저장하는 코드 작성
+        torch.save(model_model, os.path.join(final_output_dir, 'final_model_model.pt'))
+    else:
+        torch.save(model_head, os.path.join(final_output_dir, 'final_model_head.pt'))
 
     writer_dict['writer'].close()
     end = timeit.default_timer()

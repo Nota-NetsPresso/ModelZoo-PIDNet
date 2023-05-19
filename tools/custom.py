@@ -10,8 +10,10 @@ import numpy as np
 import _init_paths
 import models
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 from PIL import Image
+import sys
 
 mean = [0.485, 0.456, 0.406]
 std = [0.229, 0.224, 0.225]
@@ -43,7 +45,9 @@ def parse_args():
     parser.add_argument('--c', help='cityscapes pretrained or not', type=bool, default=True)
     parser.add_argument('--p', help='dir for pretrained model', default='../pretrained_models/cityscapes/PIDNet_L_Cityscapes_test.pt', type=str)
     parser.add_argument('--r', help='root or dir for input images', default='../samples/', type=str)
-    parser.add_argument('--t', help='the format of input images (.jpg, .png, ...)', default='.png', type=str)     
+    parser.add_argument('--t', help='the format of input images (.jpg, .png, ...)', default='.png', type=str)
+    parser.add_argument('--netspresso', action='store_true', help='retrain the compressed model')
+    parser.add_argument('--model', type=str, default=None)
 
     args = parser.parse_args()
 
@@ -76,12 +80,27 @@ if __name__ == '__main__':
     images_list = glob.glob(args.r+'*'+args.t)
     sv_path = args.r+'outputs/'
     
-    model = models.pidnet.get_pred_model(args.a, 19 if args.c else 11)
-    model = load_pretrained(model, args.p).cuda()
+    if args.netspresso:
+        try:
+            model_model = torch.load(args.model)
+            model_justout = models.pidnet.get_justout()
+        except:
+            print('!! You need to check your --model, --head !!')
+            sys.exit()
+            
+        model = nn.Sequential(
+            model_model,
+            model_justout
+        ).cuda()
+    else:
+        model = models.pidnet.get_pred_model(args.a, 19 if args.c else 11)
+        model = load_pretrained(model, args.p).cuda()
+        
     model.eval()
     with torch.no_grad():
+        print("변환할 이미지 목록 :", images_list)
         for img_path in images_list:
-            img_name = img_path.split("\\")[-1]
+            img_name = img_path.split("/")[-1]
             img = cv2.imread(os.path.join(args.r, img_name),
                                cv2.IMREAD_COLOR)
             sv_img = np.zeros_like(img).astype(np.uint8)

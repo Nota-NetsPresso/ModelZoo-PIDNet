@@ -5,6 +5,7 @@
 import argparse
 import os
 import pprint
+import sys
 
 import logging
 import timeit
@@ -29,8 +30,11 @@ def parse_args():
     
     parser.add_argument('--cfg',
                         help='experiment configure file name',
-                        default="experiments/cityscapes/pidnet_small_cityscapes.yaml",
+                        default="/PIDNet/configs/cityscapes/pidnet_small_cityscapes.yaml",
                         type=str)
+    parser.add_argument('--netspresso', action='store_true', help='retrain the compressed model')
+    parser.add_argument('--model', type=str, default=None) 
+    parser.add_argument('--head', type=str, default=None) 
     parser.add_argument('opts',
                         help="Modify config options using the command-line",
                         default=None,
@@ -56,26 +60,39 @@ def main():
     cudnn.enabled = config.CUDNN.ENABLED
 
     # build model
-    model = model = models.pidnet.get_seg_model(config, imgnet_pretrained=True)
-
-    if config.TEST.MODEL_FILE:
-        model_state_file = config.TEST.MODEL_FILE
+    if args.netspresso:
+        try:
+            model_model = torch.load(args.model)
+            model_head = torch.load(args.head)
+        except:
+            logger.info('!! You need to check your --model, --head !!')
+            sys.exit()
+            
+        model = nn.Sequential(
+            model_model,
+            model_head
+        )
     else:
-        model_state_file = os.path.join(final_output_dir, 'best.pt')      
-   
-    logger.info('=> loading model from {}'.format(model_state_file))
-        
-    pretrained_dict = torch.load(model_state_file)
-    if 'state_dict' in pretrained_dict:
-        pretrained_dict = pretrained_dict['state_dict']
-    model_dict = model.state_dict()
-    pretrained_dict = {k[6:]: v for k, v in pretrained_dict.items()
-                        if k[6:] in model_dict.keys()}
-    for k, _ in pretrained_dict.items():
-        logger.info(
-            '=> loading {} from pretrained model'.format(k))
-    model_dict.update(pretrained_dict)
-    model.load_state_dict(model_dict)
+        model = model = models.pidnet.get_seg_model(config, imgnet_pretrained=True)
+
+        if config.TEST.MODEL_FILE:
+            model_state_file = config.TEST.MODEL_FILE
+        else:
+            model_state_file = os.path.join(final_output_dir, 'best.pt')      
+    
+        logger.info('=> loading model from {}'.format(model_state_file))
+            
+        pretrained_dict = torch.load(model_state_file)
+        if 'state_dict' in pretrained_dict:
+            pretrained_dict = pretrained_dict['state_dict']
+        model_dict = model.state_dict()
+        pretrained_dict = {k[6:]: v for k, v in pretrained_dict.items()
+                            if k[6:] in model_dict.keys()}
+        for k, _ in pretrained_dict.items():
+            logger.info(
+                '=> loading {} from pretrained model'.format(k))
+        model_dict.update(pretrained_dict)
+        model.load_state_dict(model_dict)
 
     model = model.cuda()
 
