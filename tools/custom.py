@@ -98,7 +98,6 @@ if __name__ == '__main__':
         
     model.eval()
     with torch.no_grad():
-        print("변환할 이미지 목록 :", images_list)
         for img_path in images_list:
             img_name = img_path.split("/")[-1]
             img = cv2.imread(os.path.join(args.r, img_name),

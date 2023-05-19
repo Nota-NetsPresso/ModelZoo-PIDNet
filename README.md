@@ -1,3 +1,11 @@
+<div align="center">
+  <p>
+    <a align="center" href="README.netspresso.md" target="_blank">
+      <img width="100%" src="./imgs/PIDNet_banner1.png"></a>
+  </p>
+
+</div>
+
 # PIDNet: A Real-time Semantic Segmentation Network Inspired from PID Controller
 	
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/pidnet-a-real-time-semantic-segmentation/real-time-semantic-segmentation-on-camvid)](https://paperswithcode.com/sota/real-time-semantic-segmentation-on-camvid?p=pidnet-a-real-time-semantic-segmentation) [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/pidnet-a-real-time-semantic-segmentation/real-time-semantic-segmentation-on-cityscapes)](https://paperswithcode.com/sota/real-time-semantic-segmentation-on-cityscapes?p=pidnet-a-real-time-semantic-segmentation)
