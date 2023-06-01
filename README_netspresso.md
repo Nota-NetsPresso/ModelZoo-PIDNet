@@ -12,7 +12,7 @@
 [2. Prepare the dataset](#2-prepare-the-dataset) </br>
 [3. Training](#3-training) </br>
 [4. Convert PIDNet to _torchfx.pt](#4-convert-pidnet-to-_torchfxpt) </br>
-[5. Model Compression with NetsPresso](#5-model-compression-with-netspresso)</br>
+[5. Model Compression with NetsPresso Python Package](#5-model-compression-with-netspresso-python-package)</br>
 [6. Fine-tuning the compressed Model](#6-fine-tuning-the-compressed-model)</br>
 [7. Evaluation](#7-evaluation)</br>
 [8. Custom Inputs](#8-custom-inputs)</br>
@@ -59,14 +59,112 @@ python tools/export_netspresso.py --cfg configs/cityscapes/pidnet_small_cityscap
 ````
 Executing this code will create 'model_modelfx.pt' and 'model_headfx.pt'.<br/>
 
-## 5. Model Compression with NetsPresso<br/>
-Upload & compress your 'model_modelfx.pt' by using NetsPresso Model Compressor module here: https://console.netspresso.ai/models<br/>
+## 5. Model Compression with NetsPresso Python Package<br/>
+Upload & compress your 'model_modelfx.pt' by using NetsPresso Python Package
+### 5_1. Install NetsPresso Python Package
+```bash
+pip install netspresso
+```
+### 5_2. Upload & Compress
+First, import the packages and set a NetsPresso username and password.
+```python
+from netspresso.compressor import ModelCompressor, Task, Framework, CompressionMethod, RecommendationMethod
+
+
+EMAIL = "YOUR_EMAIL"
+PASSWORD = "YOUR_PASSWORD"
+compressor = ModelCompressor(email=EMAIL, password=PASSWORD)
+```
+Second, upload 'model_modelfx.pt', which is the model converted to torchfx in step 3, with the following code.
+```python
+# Upload Model
+UPLOAD_MODEL_NAME = "pidnet_model"
+TASK = Task.SEMANTIC_SEGMENTATION
+FRAMEWORK = Framework.PYTORCH
+UPLOAD_MODEL_PATH = "./model_modelfx.pt"
+INPUT_LAYERS = [{"batch": 1, "channel": 3, "dimension": [640, 640]}]
+model = compressor.upload_model(
+    model_name=UPLOAD_MODEL_NAME,
+    task=TASK,
+    framework=FRAMEWORK,
+    file_path=UPLOAD_MODEL_PATH,
+    input_layers=INPUT_LAYERS,
+)
+```
+Finally, you can compress the uploaded model with the desired options through the following code.
+```python
+# Recommendation Compression
+COMPRESSED_MODEL_NAME = "test_l2norm"
+COMPRESSION_METHOD = CompressionMethod.PR_L2
+RECOMMENDATION_METHOD = RecommendationMethod.SLAMP
+RECOMMENDATION_RATIO = 0.6
+OUTPUT_PATH = "./compressed_pidnet.pt"
+compressed_model = compressor.recommendation_compression(
+    model_id=model.model_id,
+    model_name=COMPRESSED_MODEL_NAME,
+    compression_method=COMPRESSION_METHOD,
+    recommendation_method=RECOMMENDATION_METHOD,
+    recommendation_ratio=RECOMMENDATION_RATIO,
+    output_path=OUTPUT_PATH,
+)
+```
+
+<details>
+<summary>Click to check 'Full Upload&Compress Code'</summary>
+
+```bash
+pip install netspresso
+```
+
+```python
+from netspresso.compressor import ModelCompressor, Task, Framework, CompressionMethod, RecommendationMethod
+
+
+EMAIL = "YOUR_EMAIL"
+PASSWORD = "YOUR_PASSWORD"
+compressor = ModelCompressor(email=EMAIL, password=PASSWORD)
+
+# Upload Model
+UPLOAD_MODEL_NAME = "pidnet_model"
+TASK = Task.SEMANTIC_SEGMENTATION
+FRAMEWORK = Framework.PYTORCH
+UPLOAD_MODEL_PATH = "./model_modelfx.pt"
+INPUT_LAYERS = [{"batch": 1, "channel": 3, "dimension": [1024, 1024]}]
+model = compressor.upload_model(
+    model_name=UPLOAD_MODEL_NAME,
+    task=TASK,
+    framework=FRAMEWORK,
+    file_path=UPLOAD_MODEL_PATH,
+    input_layers=INPUT_LAYERS,
+)
+
+# Recommendation Compression
+COMPRESSED_MODEL_NAME = "test_l2norm"
+COMPRESSION_METHOD = CompressionMethod.PR_L2
+RECOMMENDATION_METHOD = RecommendationMethod.SLAMP
+RECOMMENDATION_RATIO = 0.6
+OUTPUT_PATH = "./compressed_pidnet.pt"
+compressed_model = compressor.recommendation_compression(
+    model_id=model.model_id,
+    model_name=COMPRESSED_MODEL_NAME,
+    compression_method=COMPRESSION_METHOD,
+    recommendation_method=RECOMMENDATION_METHOD,
+    recommendation_ratio=RECOMMENDATION_RATIO,
+    output_path=OUTPUT_PATH,
+)
+```
+
+</details>
+
+More commands can be found in the official NetsPresso Python Package Docs: https://nota-github.github.io/netspresso-python/build/html/index.html <br/>
+
+Alternatively, you can do the same as above through the GUI on our website: https://console.netspresso.ai/models<br/><br/>
 
 ## 6. Fine-tuning the compressed Model</br>
 After compression, retraining is necessary. You can retrain with the following code.<br>
 Along with the --netspresso option, you need to put the path of the compressed model in the --model option and the path of model_headfx.pt that came out while converting to torchfx in the --head option.
 ```bash
-python tools/train.py --netspresso --model model_model.pt --head model_head.pt
+python tools/train.py --netspresso --model model_model.pt --head model_head.pt --cfg configs/cityscapes/pidnet_small_cityscapes.yaml
 ```
 If you want to perform additional compression, compress x_model_model_pt from training as in Step 5.
 In the above command, put the path of the newly compressed model in the --model option. In the --head option, you need to change it to the path of x_model_head_pt that came out through retraining.
