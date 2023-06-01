@@ -75,14 +75,14 @@ EMAIL = "YOUR_EMAIL"
 PASSWORD = "YOUR_PASSWORD"
 compressor = ModelCompressor(email=EMAIL, password=PASSWORD)
 ```
-Second, upload 'model_modelfx.pt', which is the model converted to torchfx in step 3, with the following code.
+Second, upload 'model_modelfx.pt', which is the model converted to torchfx in step 4, with the following code.
 ```python
 # Upload Model
 UPLOAD_MODEL_NAME = "pidnet_model"
 TASK = Task.SEMANTIC_SEGMENTATION
 FRAMEWORK = Framework.PYTORCH
 UPLOAD_MODEL_PATH = "./model_modelfx.pt"
-INPUT_LAYERS = [{"batch": 1, "channel": 3, "dimension": [640, 640]}]
+INPUT_LAYERS = [{"batch": 1, "channel": 3, "dimension": [1024, 1024]}]
 model = compressor.upload_model(
     model_name=UPLOAD_MODEL_NAME,
     task=TASK,
@@ -110,7 +110,7 @@ compressed_model = compressor.recommendation_compression(
 ```
 
 <details>
-<summary>Click to check 'Full Upload&Compress Code'</summary>
+<summary>Click to check 'Full Upload & Compress Code'</summary>
 
 ```bash
 pip install netspresso
