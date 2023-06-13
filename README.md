@@ -24,7 +24,7 @@ You can sign up here: https://netspresso.ai/signup
 
 ## 1. Install
 Clone repo, including
-[**PyTorch==1.11**](https://pytorch.org/get-started/locally/).
+[**PyTorch >= 1.11, < 2.0**](https://pytorch.org/get-started/locally/).
 
 ```bash
 git clone https://github.com/Nota-NetsPresso/PIDNet_nota  # clone
