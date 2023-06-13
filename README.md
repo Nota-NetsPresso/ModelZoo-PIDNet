@@ -5,7 +5,7 @@
   </p>
 </div>
 
-# <div align="center">NetsPresso tutorial for PIDNet compressrion</div>
+# <div align="center">NetsPresso tutorial for PIDNet compression</div>
 ## Order of the tutorial
 [0. Sign up](#0-sign-up) </br>
 [1. Install](#1-install) </br>
