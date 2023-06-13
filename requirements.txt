@@ -1,0 +1,6 @@
+# PIDNet Nota requirements
+# Usage: pip install -r requirements.txt
+
+yacs
+tensorboardX
+opencv-python
