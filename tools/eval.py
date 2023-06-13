@@ -30,7 +30,7 @@ def parse_args():
     
     parser.add_argument('--cfg',
                         help='experiment configure file name',
-                        default="/PIDNet/configs/cityscapes/pidnet_small_cityscapes.yaml",
+                        default="/PIDNet_nota/configs/cityscapes/pidnet_small_cityscapes.yaml",
                         type=str)
     parser.add_argument('--netspresso', action='store_true', help='retrain the compressed model')
     parser.add_argument('--model', type=str, default=None) 
