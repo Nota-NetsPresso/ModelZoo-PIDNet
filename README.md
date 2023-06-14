@@ -18,7 +18,7 @@
 [8. Custom inputs](#8-custom-inputs)</br>
 
 ## 0. Sign up
-To get started with the NetsPresso Python package, you will need to sign up either at <a href="https://netspresso.ai/" target="_blank">NetsPresso</a> or <a href="https://py.netspresso.ai/?utm_source=git_pid&utm_medium=page&utm_campaign=py_launch" target="_blank">PyNetsPresso</a>.
+To get started with the NetsPresso Python package, you will need to sign up either at <a href="https://netspresso.ai?utm_source=git_pid&utm_medium=text_np&utm_campaign=py_launch" target="_blank">NetsPresso</a> or <a href="https://py.netspresso.ai/?utm_source=git_pid&utm_medium=text_py&utm_campaign=py_launch" target="_blank">PyNetsPresso</a>.
 </br>
 </br>
 
