@@ -235,7 +235,6 @@ def main():
     if args.netspresso:
         #Netspresso_ 분리해서 저장하는 코드 작성
         torch.save(model_model, os.path.join(final_output_dir, 'final_model_model.pt'))
-    else:
         torch.save(model_head, os.path.join(final_output_dir, 'final_model_head.pt'))
 
     writer_dict['writer'].close()
