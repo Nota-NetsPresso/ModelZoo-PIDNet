@@ -78,13 +78,13 @@ def main():
     model_model.train()
     _graph = fx.Tracer().trace(model_model)
     traced_model = fx.GraphModule(model_model, _graph)
-    torch.save(traced_model, "/pidnet_nota/model_modelfx.pt")
-    logger.info('=> saving model_model torchfx to /pidnet/model_modelfx.pt')
+    torch.save(traced_model, "./model_modelfx.pt")
+    logger.info('=> saving model_model torchfx to ./model_modelfx.pt')
     
     #save model_head
     model_head.train()
-    torch.save(model_head, "/pidnet_nota/model_head.pt")
-    logger.info('=> saving model_head torchfx to /pidnet_nota/model_head.pt')
+    torch.save(model_head, "./model_head.pt")
+    logger.info('=> saving model_head torchfx to ./model_head.pt')
     
 if __name__ == '__main__':
     main()
