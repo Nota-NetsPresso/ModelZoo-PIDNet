@@ -2,6 +2,7 @@ import argparse
 import os
 
 import torch
+from netspresso.compressor import ModelCompressor, Task, Framework
 
 import models
 from configs import config
@@ -26,6 +27,44 @@ def parse_args():
                         nargs=argparse.REMAINDER
     )
 
+    """
+        Compression arguments
+    """
+    parser.add_argument(
+        "--compression_method",
+        type=str,
+        choices=["PR_L2", "PR_GM", "PR_NN", "PR_ID", "FD_TK", "FD_CP", "FD_SVD"],
+        default="PR_L2"
+    )
+    parser.add_argument(
+        "--recommendation_method",
+        type=str,
+        choices=["slamp", "vbmf"],
+        default="slamp"
+    )
+    parser.add_argument(
+        "--compression_ratio",
+        type=int,
+        default=0.5
+    )
+    parser.add_argument(
+        "-w",
+        "--weight_path",
+        type=str
+    )
+    parser.add_argument(
+        "-m",
+        "--np_email",
+        help="NetsPresso login e-mail",
+        type=str,
+    )
+    parser.add_argument(
+        "-p",
+        "--np_password",
+        help="NetsPresso login password",
+        type=str,
+    )
+
 
     args = parser.parse_args()
     update_config(config, args)
@@ -45,11 +84,7 @@ if __name__ == "__main__":
     # build model
     model_model, model_head = models.pidnet.get_netspresso_model(config, imgnet_pretrained=True)
 
-    if config.TEST.MODEL_FILE:
-        model_state_file = config.TEST.MODEL_FILE
-    else:
-        model_state_file = os.path.join(final_output_dir, 'best.pt')
-   
+    model_state_file = args.weight_path
     logger.info('=> loading model from {}'.format(model_state_file))
         
     pretrained_dict = torch.load(model_state_file)
@@ -84,12 +119,48 @@ if __name__ == "__main__":
     model_model.train()
     _graph = fx.Tracer().trace(model_model)
     traced_model = fx.GraphModule(model_model, _graph)
-    torch.save(traced_model, "./model_modelfx.pt")
-    logger.info('=> saving model_model torchfx to ./model_modelfx.pt')
+    torch.save(traced_model, config.MODEL.NAME + '_fx.pt')
+    logger.info('=> saving model_model torchfx')
     
     #save model_head
     model_head.train()
-    torch.save(model_head, "./model_headfx.pt")
-    logger.info('=> saving model_head torchfx to ./model_headfx.pt')
+    torch.save(model_head, config.MODEL.NAME + '_head_fx.pt')
+    logger.info('=> saving model_head torchfx')
 
     logger.info("PIDNet to fx graph end.")
+
+    """ 
+        Model compression - recommendation compression 
+    """
+    logger.info("Compression step start.")
+
+    compressor = ModelCompressor(email=args.np_email, password=args.np_password)
+
+    UPLOAD_MODEL_NAME = config.MODEL.NAME
+    TASK = Task.OBJECT_DETECTION
+    FRAMEWORK = Framework.PYTORCH
+    UPLOAD_MODEL_PATH = config.MODEL.NAME + '_fx.pt'
+    INPUT_SHAPES = [{"batch": 1, "channel": 3, "dimension": config.TRAIN.IMAGE_SIZE}]
+    model = compressor.upload_model(
+        model_name=UPLOAD_MODEL_NAME,
+        task=TASK,
+        framework=FRAMEWORK,
+        file_path=UPLOAD_MODEL_PATH,
+        input_shapes=INPUT_SHAPES,
+    )
+    
+    COMPRESSION_METHOD = args.compression_method
+    RECOMMENDATION_METHOD = args.recommendation_method
+    RECOMMENDATION_RATIO = args.compression_ratio
+    COMPRESSED_MODEL_NAME = f'{UPLOAD_MODEL_NAME}_{COMPRESSION_METHOD}_{RECOMMENDATION_RATIO}'
+    OUTPUT_PATH = COMPRESSED_MODEL_NAME + '.pt'
+    compressed_model = compressor.recommendation_compression(
+        model_id=model.model_id,
+        model_name=COMPRESSED_MODEL_NAME,
+        compression_method=COMPRESSION_METHOD,
+        recommendation_method=RECOMMENDATION_METHOD,
+        recommendation_ratio=RECOMMENDATION_RATIO,
+        output_path=OUTPUT_PATH,
+    )
+
+    logger.info("Compression step end.")
