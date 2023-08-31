@@ -172,7 +172,7 @@ def trainer(args, config, logger, final_output_dir, tb_log_dir, model, head):
         params = [{'params': list(params_dict.values()), 'lr': config.TRAIN.LR}]
 
         optimizer = torch.optim.SGD(params,
-                                lr=config.TRAIN.LR,
+                                lr=config.TRAIN.LR * 0.1,
                                 momentum=config.TRAIN.MOMENTUM,
                                 weight_decay=config.TRAIN.WD,
                                 nesterov=config.TRAIN.NESTEROV,
