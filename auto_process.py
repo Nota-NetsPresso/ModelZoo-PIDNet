@@ -345,3 +345,22 @@ if __name__ == "__main__":
             head=config.MODEL.NAME + '_head_fx.pt')
 
     logger.info("Fine-tuning step end.")
+
+    """ 
+        Export PIDNet model to onnx
+    """
+    logger.info("Export model to onnx format step start.")
+
+    model_model = torch.load(os.path.join(final_output_dir, 'best_model_model.pt'), map_location='cpu')
+    model_head = torch.load(os.path.join(final_output_dir, 'best_model_head.pt'), map_location='cpu')
+ 
+    model_head.netspresso = True
+    model_head.export = True
+    combined_model = torch.nn.Sequential(model_model, model_head)
+
+    dummy_input = torch.randn(1, 3, 1024, 1024)
+    torch.onnx.export(combined_model, dummy_input, COMPRESSED_MODEL_NAME + '.onnx', 
+                      verbose=True, input_names=['input'], output_names=['output'], opset_version=12)
+    logger.info(f'=> saving model to {COMPRESSED_MODEL_NAME}.onnx')
+
+    logger.info("Export model to onnx format step end.")
