@@ -9,6 +9,7 @@ import timeit
 import numpy as np
 
 import torch
+import torch.fx as fx
 import torch.nn as nn
 import torch.backends.cudnn as cudnn
 import torch.optim
@@ -283,8 +284,6 @@ if __name__ == "__main__":
     
     model_head.load_state_dict(model_head_dict)
     
-    import torch.fx as fx
-    
     #save model_model
     model_model.train()
     _graph = fx.Tracer().trace(model_model)
@@ -307,7 +306,7 @@ if __name__ == "__main__":
     compressor = ModelCompressor(email=args.np_email, password=args.np_password)
 
     UPLOAD_MODEL_NAME = config.MODEL.NAME
-    TASK = Task.OBJECT_DETECTION
+    TASK = Task.SEMANTIC_SEGMENTATION
     FRAMEWORK = Framework.PYTORCH
     UPLOAD_MODEL_PATH = config.MODEL.NAME + '_fx.pt'
     INPUT_SHAPES = [{"batch": 1, "channel": 3, "dimension": config.TRAIN.IMAGE_SIZE}]
@@ -357,6 +356,7 @@ if __name__ == "__main__":
     model_head.netspresso = True
     model_head.export = True
     combined_model = torch.nn.Sequential(model_model, model_head)
+    combined_model.eval()
 
     dummy_input = torch.randn(1, 3, 1024, 1024)
     torch.onnx.export(combined_model, dummy_input, COMPRESSED_MODEL_NAME + '.onnx', 
