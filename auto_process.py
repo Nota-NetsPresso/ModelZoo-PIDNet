@@ -358,7 +358,7 @@ if __name__ == "__main__":
     combined_model = torch.nn.Sequential(model_model, model_head)
     combined_model.eval()
 
-    dummy_input = torch.randn(1, 3, 1024, 1024)
+    dummy_input = torch.randn(1, 3, config.TEST.IMAGE_SIZE[0], config.TEST.IMAGE_SIZE[1])
     torch.onnx.export(combined_model, dummy_input, COMPRESSED_MODEL_NAME + '.onnx', 
                       verbose=True, input_names=['input'], output_names=['output'], opset_version=12)
     logger.info(f'=> saving model to {COMPRESSED_MODEL_NAME}.onnx')
