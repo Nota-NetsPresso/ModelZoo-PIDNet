@@ -59,7 +59,7 @@ def parse_args():
     )
     parser.add_argument(
         "--compression_ratio",
-        type=int,
+        type=float,
         default=0.3
     )
     parser.add_argument(
